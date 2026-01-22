@@ -22,3 +22,32 @@ toml = "0.8"
 
 [dev-dependencies]
 hex = "0.4.3"
+
+[package.metadata.deb]
+maintainer = "tomahna"
+copyright = "2026, tomahna"
+section = "misc"
+priority = "optional"
+depends = "$auto, systemd"
+maintainer-scripts = "debian/"
+systemd-units = { enable = false }
+
+# Assets to include in the package
+assets = [
+    # Binary
+    ["target/release/hass-everblu-meter", "usr/bin/", "755"],
+
+    # Example configuration
+    ["config.toml.example", "etc/hass-everblu-meter/config.toml", "644"],
+
+    # Documentation
+    ["README.md", "usr/share/doc/hass-everblu-meter/", "644"],
+]
+
+# Architecture-specific overrides
+[package.metadata.deb.variants.armhf] # For 32-bit ARM (armv7-unknown-linux-gnueabihf)
+depends = "$auto"
+
+[package.metadata.deb.variants.arm64] # For 64-bit ARM (aarch64-unknown-linux-gnu)
+depends = "$auto"
+
