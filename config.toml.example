@@ -1,0 +1,116 @@
+# EverBlu Meters - Configuration File
+# Copy this file to config.toml and edit with your settings
+
+# MQTT Broker Configuration
+[mqtt]
+# MQTT broker host (hostname or IP address)
+# Examples: "localhost", "192.168.1.100", "mqtt.example.com"
+host = "192.168.1.100"
+
+# MQTT broker port
+# Default: 1883 for plain TCP, 8883 for TLS
+port = 1883
+
+# Unique client ID for this MQTT client
+# Change this if you have multiple meters publishing to the same broker
+client_id = "everblu-meter-reader"
+
+# MQTT authentication (optional - omit or comment out if not needed)
+username = "homeassistant"
+password = "your_mqtt_password_here"
+
+# Quality of Service level (0, 1, or 2)
+# 0 = At most once (fire and forget)
+# 1 = At least once (recommended)
+# 2 = Exactly once
+qos = 1
+
+# Retain messages on broker
+# true = MQTT broker stores the last message for new subscribers
+# false = Messages are only sent to current subscribers
+retain = true
+
+# Home Assistant MQTT Discovery Configuration
+[homeassistant]
+# Discovery topic prefix (default: homeassistant)
+# Only change if you've configured Home Assistant with a custom prefix
+discovery_prefix = "homeassistant"
+
+# Unique node ID for this meter
+# This identifies the device in Home Assistant
+# Use a descriptive name like "basement_water_meter" or "main_water_meter"
+node_id = "water_meter"
+
+# Human-readable device name shown in Home Assistant
+device_name = "Water Meter"
+
+# Device manufacturer (optional, defaults to "Itron")
+device_manufacturer = "Itron"
+
+# Device model (optional, defaults to "EverBlu Cyble Enhanced")
+device_model = "EverBlu Cyble Enhanced"
+
+# Meter Configuration
+[meter]
+# Meter serial number (decimal format)
+# IMPORTANT: You MUST change this to match your meter's serial number
+# Find this number on your physical meter
+serial = 1234567 
+
+# Production year code
+# IMPORTANT: You MUST change this to match your meter's production year
+# This is typically a 2-digit code (e.g., 16 for 2016)
+year = 16
+
+# Optional: Physical location of the meter
+# This is for your reference and is not sent to Home Assistant
+location = "Main Water Supply"
+
+# Advanced Configuration (optional)
+[advanced]
+# MQTT connection timeout in milliseconds
+timeout_ms = 2000
+
+# Maximum connection retry attempts
+max_retries = 3
+
+# Meter read timeout in milliseconds
+# Increase this if you're experiencing read timeouts
+read_timeout_ms = 5000
+
+# IMPORTANT NOTES:
+# ================
+#
+# 1. Meter Serial and Year:
+#    - The serial number and year MUST match your physical meter
+#    - Find these values on your meter's label
+#    - Incorrect values will result in the meter not responding
+#
+# 2. Meter Wake Hours:
+#    - EverBlu meters only listen during configured "business hours"
+#    - Default is typically 6am-6pm (adjustable on the meter)
+#    - Reads outside these hours will fail
+#
+# 3. MQTT Security:
+#    - For production, use TLS (ssl://) and strong passwords
+#    - Consider using MQTT client certificates for mutual TLS
+#    - Protect this file (chmod 600 config.toml) if it contains passwords
+#
+# 4. Home Assistant Integration:
+#    - After first run, check Home Assistant:
+#      Settings → Devices & Services → MQTT
+#    - You should see a "Water Meter" device with 5 sensors:
+#      * Water Consumption (liters)
+#      * Battery Life (months)
+#      * Read Counter (reads)
+#      * Wake Time (hour)
+#      * Sleep Time (hour)
+#
+# 5. Systemd Service:
+#    - To run periodically, create a systemd timer
+#    - See CLAUDE.md for example service/timer configuration
+#
+# 6. Testing:
+#    - Test your config: cargo run -- config.toml
+#    - Monitor MQTT: mosquitto_sub -h <broker> -t 'homeassistant/#' -v
+#    - Check logs: RUST_LOG=debug cargo run
