@@ -49,14 +49,14 @@ jobs:
       - name: Create tarball
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czf everblu-meters-${{ matrix.target }}.tar.gz everblu-meters
-          mv everblu-meters-${{ matrix.target }}.tar.gz ../../../
+          tar -czf hass-everblu-meter-${{ matrix.target }}.tar.gz hass-everblu-meter
+          mv hass-everblu-meter-${{ matrix.target }}.tar.gz ../../../
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: everblu-meters-${{ matrix.target }}
-          path: everblu-meters-${{ matrix.target }}.tar.gz
+          name: hass-everblu-meter-${{ matrix.target }}
+          path: hass-everblu-meter-${{ matrix.target }}.tar.gz
           if-no-files-found: error
 
   release:
@@ -77,8 +77,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/everblu-meters-armv7-unknown-linux-gnueabihf/everblu-meters-armv7-unknown-linux-gnueabihf.tar.gz
-            artifacts/everblu-meters-aarch64-unknown-linux-gnu/everblu-meters-aarch64-unknown-linux-gnu.tar.gz
+            artifacts/hass-everblu-meter-armv7-unknown-linux-gnueabihf/hass-everblu-meter-armv7-unknown-linux-gnueabihf.tar.gz
+            artifacts/hass-everblu-meter-aarch64-unknown-linux-gnu/hass-everblu-meter-aarch64-unknown-linux-gnu.tar.gz
           draft: false
           prerelease: false
           generate_release_notes: true
@@ -87,14 +87,14 @@ jobs:
 
             Download the appropriate binary for your Raspberry Pi:
 
-            - **32-bit ARM** (Raspberry Pi 2/3/4 running 32-bit OS): `everblu-meters-armv7-unknown-linux-gnueabihf.tar.gz`
-            - **64-bit ARM** (Raspberry Pi 3/4/5 running 64-bit OS): `everblu-meters-aarch64-unknown-linux-gnu.tar.gz`
+            - **32-bit ARM** (Raspberry Pi 2/3/4 running 32-bit OS): `hass-everblu-meter-armv7-unknown-linux-gnueabihf.tar.gz`
+            - **64-bit ARM** (Raspberry Pi 3/4/5 running 64-bit OS): `hass-everblu-meter-aarch64-unknown-linux-gnu.tar.gz`
 
             Extract and install:
             ```bash
-            tar -xzf everblu-meters-*.tar.gz
-            sudo mv everblu-meters /usr/local/bin/
-            sudo chmod +x /usr/local/bin/everblu-meters
+            tar -xzf hass-everblu-meter-*.tar.gz
+            sudo mv hass-everblu-meter /usr/local/bin/
+            sudo chmod +x /usr/local/bin/hass-everblu-meter
             ```
 
             See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for configuration and usage instructions.

@@ -1,5 +1,5 @@
 [package]
-name = "everblu-meters-rs"
+name = "hass-everblu-meter"
 version = "0.1.0"
 edition = "2021"
 authors = [ "tomahna" ]
@@ -7,7 +7,7 @@ description = "Read Itron EverBlu Cyble water meters via RADIAN protocol over CC
 license = "MIT"
 
 [[bin]]
-name = "everblu-meters"
+name = "hass-everblu-meter"
 path = "src/main.rs"
 
 [dependencies]
