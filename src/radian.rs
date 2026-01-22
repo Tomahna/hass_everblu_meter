@@ -52,10 +52,7 @@ pub fn decode_4bitpbit_serial(rx_buffer: &[u8], l_total_byte: u16) -> Vec<u8> {
                     if dest_bit_cnt >= 11 && bit_pol == 0 {
                         // start bit
                         dest_bit_cnt = 0;
-                        debug!(
-                            "dec[{}]={} {}",
-                            i, dest_byte_cnt, decoded[dest_byte_cnt]
-                        );
+                        debug!("dec[{}]={} {}", i, dest_byte_cnt, decoded[dest_byte_cnt]);
                         dest_byte_cnt += 1;
                     }
                 }
