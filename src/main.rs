@@ -6,12 +6,17 @@ mod radian;
 
 use cc1101::{MeterData, CC1101};
 use config::Config;
-use log::{error, info};
+use log::{error, info, LevelFilter};
 use mqtt::MqttPublisher;
+use simple_logger::SimpleLogger;
 use std::process::exit;
 
 fn main() {
-    simple_logger::init_with_env().unwrap();
+    SimpleLogger::new()
+        .with_level(LevelFilter::Info)
+        .env()
+        .init()
+        .unwrap();
 
     match run() {
         Ok(_) => exit(0),
