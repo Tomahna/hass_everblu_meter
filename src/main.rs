@@ -58,13 +58,16 @@ fn publish_to_mqtt(
     config: &Config,
     meter_data: &MeterData,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let publisher = MqttPublisher::new(config.mqtt.clone(), config.homeassistant.clone())?;
+    let mut publisher = MqttPublisher::new(config.mqtt.clone(), config.homeassistant.clone())?;
 
     info!("Publishing Home Assistant discovery messages");
     publisher.publish_discovery(&config.meter)?;
 
     info!("Publishing meter state");
     publisher.publish_state(meter_data)?;
+
+    // Wait for messages to be transmitted before exiting
+    publisher.disconnect();
 
     Ok(())
 }

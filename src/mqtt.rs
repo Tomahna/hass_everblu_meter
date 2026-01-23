@@ -1,7 +1,7 @@
 use crate::cc1101::MeterData;
 use crate::config::{HomeAssistantConfig, MeterConfig, MqttConfig};
-use log::{debug, info};
-use rumqttc::{Client, MqttOptions, QoS};
+use log::{debug, error, info};
+use rumqttc::{Client, Connection, MqttOptions, QoS};
 use serde::Serialize;
 use std::time::Duration;
 
@@ -50,6 +50,7 @@ struct DiscoveryConfig<'a> {
 
 pub struct MqttPublisher {
     client: Client,
+    connection: Connection,
     mqtt_config: MqttConfig,
     ha_config: HomeAssistantConfig,
 }
@@ -67,25 +68,11 @@ impl MqttPublisher {
             mqttoptions.set_credentials(username, password);
         }
 
-        let (client, mut connection) = Client::new(mqttoptions, 10);
-
-        // Spawn connection handler in background thread
-        std::thread::spawn(move || {
-            for notification in connection.iter() {
-                match notification {
-                    Ok(_) => {}
-                    Err(e) => {
-                        debug!("MQTT connection notification error: {:?}", e);
-                    }
-                }
-            }
-        });
-
-        // Give the connection a moment to establish
-        std::thread::sleep(Duration::from_millis(100));
+        let (client, connection) = Client::new(mqttoptions, 10);
 
         Ok(Self {
             client,
+            connection,
             mqtt_config,
             ha_config,
         })
@@ -191,6 +178,23 @@ impl MqttPublisher {
         info!("Published meter state");
 
         Ok(())
+    }
+
+    // /// Wait for pending MQTT messages to be transmitted before exiting
+    // /// This is critical for one-shot programs that exit immediately after publishing
+    pub fn disconnect(&mut self) {
+        self.client.disconnect().unwrap();
+        for notification in self.connection.iter() {
+            match notification {
+                Ok(notif) => {
+                    debug!("mqtt: {notif:?}")
+                }
+                Err(error) => {
+                    error!("mqtt: {error:?}");
+                    return;
+                }
+            }
+        }
     }
 
     fn create_device_info(&self, meter_config: &MeterConfig) -> DeviceInfo<'_> {
