@@ -15,9 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
-          - armv7-unknown-linux-gnueabihf  # 32-bit ARM (Raspberry Pi 2/3/4)
-          - aarch64-unknown-linux-gnu      # 64-bit ARM (Raspberry Pi 3/4/5)
+        include:
+          - target: armv7-unknown-linux-gnueabihf  # 32-bit ARM (Raspberry Pi 2/3/4)
+            gcc-package: gcc-arm-linux-gnueabihf
+            deb-arch: armhf
+          - target: aarch64-unknown-linux-gnu      # 64-bit ARM (Raspberry Pi 3/4/5)
+            gcc-package: gcc-aarch64-linux-gnu
+            deb-arch: arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +33,7 @@ jobs:
       - name: Install cross-compilation tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+          sudo apt-get install -y ${{ matrix.gcc-package }} 
 
       - name: Cache cargo registry & index
         uses: actions/cache@v4
@@ -49,14 +53,35 @@ jobs:
       - name: Create tarball
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czf everblu-meters-${{ matrix.target }}.tar.gz everblu-meters
-          mv everblu-meters-${{ matrix.target }}.tar.gz ../../../
+          tar -czf hass-everblu-meter-${{ matrix.target }}.tar.gz hass-everblu-meter
+          mv hass-everblu-meter-${{ matrix.target }}.tar.gz ../../../
 
-      - name: Upload artifacts
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build .deb package
+        run: |
+          cargo deb --target ${{ matrix.target }} --no-build --variant ${{ matrix.deb-arch }}
+
+      - name: Rename .deb package
+        run: |
+          # Find the generated .deb file and rename it with architecture
+          DEB_FILE=$(find target/${{ matrix.target }}/debian -name "*.deb" -type f)
+          DEB_NAME=$(basename "$DEB_FILE" .deb)
+          mv "$DEB_FILE" "hass-everblu-meter_${{ matrix.deb-arch }}.deb"
+
+      - name: Upload tarball artifact
         uses: actions/upload-artifact@v4
         with:
-          name: everblu-meters-${{ matrix.target }}
-          path: everblu-meters-${{ matrix.target }}.tar.gz
+          name: hass-everblu-meter-${{ matrix.target }}-tarball
+          path: hass-everblu-meter-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hass-everblu-meter-${{ matrix.deb-arch }}-deb
+          path: hass-everblu-meter_${{ matrix.deb-arch }}.deb
           if-no-files-found: error
 
   release:
@@ -77,24 +102,58 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/everblu-meters-armv7-unknown-linux-gnueabihf/everblu-meters-armv7-unknown-linux-gnueabihf.tar.gz
-            artifacts/everblu-meters-aarch64-unknown-linux-gnu/everblu-meters-aarch64-unknown-linux-gnu.tar.gz
+            artifacts/hass-everblu-meter-armv7-unknown-linux-gnueabihf-tarball/hass-everblu-meter-armv7-unknown-linux-gnueabihf.tar.gz
+            artifacts/hass-everblu-meter-aarch64-unknown-linux-gnu-tarball/hass-everblu-meter-aarch64-unknown-linux-gnu.tar.gz
+            artifacts/hass-everblu-meter-armhf-deb/hass-everblu-meter_armhf.deb
+            artifacts/hass-everblu-meter-arm64-deb/hass-everblu-meter_arm64.deb
           draft: false
           prerelease: false
           generate_release_notes: true
           body: |
-            ## Installation
+            ## Installation Options
 
-            Download the appropriate binary for your Raspberry Pi:
+            ### Option 1: Debian Package (Recommended)
 
-            - **32-bit ARM** (Raspberry Pi 2/3/4 running 32-bit OS): `everblu-meters-armv7-unknown-linux-gnueabihf.tar.gz`
-            - **64-bit ARM** (Raspberry Pi 3/4/5 running 64-bit OS): `everblu-meters-aarch64-unknown-linux-gnu.tar.gz`
+            Download and install the .deb package for your Raspberry Pi:
+
+            **32-bit ARM (Raspberry Pi 2/3/4 running 32-bit OS):**
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hass-everblu-meter_armhf.deb
+            sudo dpkg -i hass-everblu-meter_armhf.deb
+            ```
+
+            **64-bit ARM (Raspberry Pi 3/4/5 running 64-bit OS):**
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hass-everblu-meter_arm64.deb
+            sudo dpkg -i hass-everblu-meter_arm64.deb
+            ```
+
+            After installation:
+            1. Copy and edit the configuration:
+               ```bash
+               sudo cp /etc/hass-everblu-meter/config.toml.example /etc/hass-everblu-meter/config.toml
+               sudo nano /etc/hass-everblu-meter/config.toml
+               ```
+            2. Enable the timer for daily readings:
+               ```bash
+               sudo systemctl enable hass-everblu-meter.timer
+               sudo systemctl start hass-everblu-meter.timer
+               ```
+
+            **⚠️ Battery Warning:** The timer runs once per day by default to preserve meter battery life. Reading more frequently will significantly reduce the battery's 10-15 year lifespan.
+
+            ### Option 2: Manual Binary Installation
+
+            Download the appropriate tarball for your Raspberry Pi:
+
+            - **32-bit ARM**: `hass-everblu-meter-armv7-unknown-linux-gnueabihf.tar.gz`
+            - **64-bit ARM**: `hass-everblu-meter-aarch64-unknown-linux-gnu.tar.gz`
 
             Extract and install:
             ```bash
-            tar -xzf everblu-meters-*.tar.gz
-            sudo mv everblu-meters /usr/local/bin/
-            sudo chmod +x /usr/local/bin/everblu-meters
+            tar -xzf hass-everblu-meter-*.tar.gz
+            sudo mv hass-everblu-meter /usr/local/bin/
+            sudo chmod +x /usr/local/bin/hass-everblu-meter
             ```
 
-            See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for configuration and usage instructions.
+            See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for configuration and systemd setup instructions.

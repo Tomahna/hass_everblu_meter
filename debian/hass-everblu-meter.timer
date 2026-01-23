@@ -1,0 +1,11 @@
+[Unit]
+Description=Read EverBlu water meter daily
+Documentation=https://github.com/tomahna/hass-everblu-meter
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=3600
+
+[Install]
+WantedBy=timers.target

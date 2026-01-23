@@ -74,9 +74,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
-          - armv7-unknown-linux-gnueabihf  # 32-bit ARM (Raspberry Pi 2/3/4)
-          - aarch64-unknown-linux-gnu      # 64-bit ARM (Raspberry Pi 3/4/5)
+        include:
+          - target: armv7-unknown-linux-gnueabihf  # 32-bit ARM (Raspberry Pi 2/3/4)
+            gcc-package: gcc-arm-linux-gnueabihf
+            deb-arch: armhf
+          - target: aarch64-unknown-linux-gnu      # 64-bit ARM (Raspberry Pi 3/4/5)
+            gcc-package: gcc-aarch64-linux-gnu
+            deb-arch: arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -88,7 +92,7 @@ jobs:
       - name: Install cross-compilation tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+          sudo apt-get install -y ${{ matrix.gcc-package }} 
 
       - name: Cache cargo registry & index
         uses: actions/cache@v4
@@ -105,9 +109,35 @@ jobs:
           CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER: arm-linux-gnueabihf-gcc
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
-      - name: Upload artifacts
+      - name: Upload binary artifacts 
         uses: actions/upload-artifact@v4
         with:
-          name: everblu-meters-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/everblu-meters
+          name: hass-everblu-meter-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/hass-everblu-meter
+          if-no-files-found: error
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build .deb package
+        run: |
+          cargo deb --target ${{ matrix.target }} --no-build --variant ${{ matrix.deb-arch }}
+
+      - name: Verify .deb package
+        run: |
+          dpkg-deb -I target/${{ matrix.target }}/debian/*.deb
+          dpkg-deb -c target/${{ matrix.target }}/debian/*.deb
+
+      - name: Rename .deb package
+        run: |
+          # Find the generated .deb file and rename it with architecture
+          DEB_FILE=$(find target/${{ matrix.target }}/debian -name "*.deb" -type f)
+          DEB_NAME=$(basename "$DEB_FILE" .deb)
+          mv "$DEB_FILE" "hass-everblu-meter_${{ matrix.deb-arch }}.deb"
+
+      - name: Upload .deb artifacts 
+        uses: actions/upload-artifact@v4
+        with:
+          name: hass-everblu-meter-${{ matrix.deb-arch }}-deb
+          path: hass-everblu-meter_${{ matrix.deb-arch }}.deb
           if-no-files-found: error
