@@ -1,6 +1,6 @@
 [package]
 name = "hass-everblu-meter"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = [ "tomahna" ]
 description = "Read Itron EverBlu Cyble water meters via RADIAN protocol over CC1101 RF transceiver"
