@@ -39,8 +39,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let meter_data = cc1101.get_meter_data(config.meter.year, config.meter.serial)?;
     info!("Meter data read successfully:\n{:?}", meter_data);
     info!(
-        "Publishing sensor to mqtt broker {}:{}",
-        config.mqtt.host, config.mqtt.port
+        "Publishing sensor to mqtt broker {}",
+        config.mqtt.broker_url
     );
     publish_to_mqtt(&config, &meter_data)
 }

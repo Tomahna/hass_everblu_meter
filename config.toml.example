@@ -3,17 +3,14 @@
 
 # MQTT Broker Configuration
 [mqtt]
-# MQTT broker host (hostname or IP address)
-# Examples: "localhost", "192.168.1.100", "mqtt.example.com"
-host = "192.168.1.100"
-
-# MQTT broker port
-# Default: 1883 for plain TCP, 8883 for TLS
-port = 1883
-
-# Unique client ID for this MQTT client
-# Change this if you have multiple meters publishing to the same broker
-client_id = "everblu-meter-reader"
+# MQTT broker URL (including protocol and port)
+# Format: mqtt://hostname:port or mqtts://hostname:port (for TLS)
+# Examples:
+#   "mqtt://localhost:1883"
+#   "mqtt://192.168.1.100:1883"
+#   "mqtts://mqtt.example.com:8883"
+# Port can be omitted to use defaults (1883 for mqtt, 8883 for mqtts)
+broker_url = "mqtt://192.168.1.100:1883?client_id=everblu-meter-reader"
 
 # MQTT authentication (optional - omit or comment out if not needed)
 username = "homeassistant"

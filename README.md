@@ -85,9 +85,7 @@ year = 16           # Production year code
 Configure your MQTT broker:
 ```toml
 [mqtt]
-host = "localhost"
-port = 1883
-client_id = "everblu-meter-reader"
+broker_url = "mqtt://localhost:1883?client_id=everblu-meter-reader"
 username = "your_username"
 password = "your_password"
 ```
