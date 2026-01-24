@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use url::Url;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -13,9 +14,7 @@ pub struct Config {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MqttConfig {
-    pub host: String,
-    pub port: u16,
-    pub client_id: String,
+    pub broker_url: Url,
     pub username: Option<String>,
     pub password: Option<String>,
     #[serde(default = "default_qos")]
@@ -159,12 +158,6 @@ impl Config {
             ));
         }
 
-        if self.mqtt.host.is_empty() {
-            return Err(ConfigError::ValidationError(
-                "MQTT broker host cannot be empty".to_string(),
-            ));
-        }
-
         if self.mqtt.qos < 0 || self.mqtt.qos > 2 {
             return Err(ConfigError::ValidationError(
                 "MQTT QoS must be 0, 1, or 2".to_string(),
@@ -195,9 +188,7 @@ mod tests {
     fn test_config_validation() {
         let mut config = Config {
             mqtt: MqttConfig {
-                host: "localhost".to_string(),
-                port: 1883,
-                client_id: "test".to_string(),
+                broker_url: Url::parse("mqtt://localhost:1883").unwrap(),
                 username: None,
                 password: None,
                 qos: 1,

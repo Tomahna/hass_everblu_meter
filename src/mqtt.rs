@@ -9,12 +9,14 @@ const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug)]
 pub enum MqttError {
+    ConnectionError(String),
     PublishError(String),
 }
 
 impl std::fmt::Display for MqttError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            MqttError::ConnectionError(msg) => write!(f, "MQTT failed to connect: {}", msg),
             MqttError::PublishError(msg) => write!(f, "MQTT publish failed: {}", msg),
         }
     }
@@ -58,7 +60,9 @@ pub struct MqttPublisher {
 impl MqttPublisher {
     pub fn new(mqtt_config: MqttConfig, ha_config: HomeAssistantConfig) -> Result<Self, MqttError> {
         let mut mqttoptions =
-            MqttOptions::new(&mqtt_config.client_id, &mqtt_config.host, mqtt_config.port);
+            MqttOptions::try_from(mqtt_config.broker_url.clone()).map_err(|e| {
+                MqttError::ConnectionError(format!("Failed to parse broker URL: {}", e))
+            })?;
         mqttoptions.set_keep_alive(Duration::from_secs(20));
         mqttoptions.set_clean_session(true);
 
