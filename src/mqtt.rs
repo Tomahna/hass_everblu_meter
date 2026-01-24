@@ -98,7 +98,7 @@ impl MqttPublisher {
                 device: &device_info,
                 unit_of_measurement: Some("L"),
                 state_class: Some("total_increasing"),
-                device_class: Some("water_consumption"),
+                device_class: Some("water"),
             },
             DiscoveryConfig {
                 name: "Battery Life",
